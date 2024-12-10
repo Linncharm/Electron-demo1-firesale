@@ -17,6 +17,8 @@ Elements.ExportHtmlButton.addEventListener('click', () => {
 
 Elements.SaveMarkdownButton.addEventListener('click', () => {
     const markdown = Elements.MarkdownView.value;
-    Elements.SaveMarkdownButton.disabled = markdown.length === 0;
+
     window.api.saveFile(markdown);
 })
+
+Elements.SaveMarkdownButton.disabled = false;

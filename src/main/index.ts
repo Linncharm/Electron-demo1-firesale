@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
-import { join } from 'path';
+import { join , basename } from 'path';
 import { readFile , writeFile } from "node:fs/promises";
 
 type MarkdownFile = {
@@ -13,14 +13,19 @@ let currentFile: MarkdownFile = {
 };
 
 const getCurrentFile = (browserWindow: BrowserWindow)=>{
+  //当前路径信息为空，调用保存对话框
   if( currentFile.filePath ) return currentFile.filePath;
   if(!browserWindow) return;
-  return showSaveDialog(browserWindow)
+  //最终会返回一个路径
+  return showSaveFileDialog(browserWindow)
 }
 
-const setCurrentFile = (filePath: string,content: string) => {
+const setCurrentFile = (browserWindow: BrowserWindow,filePath: string,content: string) => {
   currentFile.filePath = filePath
   currentFile.content = content;
+  console.log('currentFile',currentFile);
+  app.addRecentDocument(filePath);
+  browserWindow.setTitle(`${basename(filePath)} - ${app.name}`);
 }
 
 const createWindow = () => {
@@ -85,12 +90,13 @@ const showOpenDialog = async (browserWindow: BrowserWindow) => {
 const openFile = async (filePath: string, browserWindow: BrowserWindow)=>{
   const fileContent = await readFile(filePath,{encoding: 'utf-8'});
 
-  setCurrentFile(filePath,fileContent);
+  setCurrentFile(browserWindow,filePath,fileContent);
 
   browserWindow.webContents.send('file-opened',fileContent,filePath,);
   console.log(fileContent);
 }
 
+//export html file
 const showSaveDialog = async(browserWindow: BrowserWindow,htmlFile:string)=>{
   const result = await dialog.showSaveDialog(browserWindow,{
     properties:['createDirectory'],
@@ -102,9 +108,10 @@ const showSaveDialog = async(browserWindow: BrowserWindow,htmlFile:string)=>{
   }
   const {filePath} = result;
   if (!filePath) return;
-  saveFile(filePath,htmlFile);
+  saveFile(browserWindow,htmlFile,filePath);
 }
 
+//save file
 const showSaveFileDialog = async (browserWindow:BrowserWindow) => {
   const result = await dialog.showSaveDialog(browserWindow, {
     properties: ['createDirectory'],
@@ -122,11 +129,15 @@ const showSaveFileDialog = async (browserWindow:BrowserWindow) => {
 //   await writeFile(filePath,content,{encoding:'utf-8'});
 // }
 
-const saveFile = async (browserWindow: BrowserWindow,content: string) => {
-  const filePath = await getCurrentFile(browserWindow);
+//复用实现html和md文件的保存
+const saveFile = async (browserWindow: BrowserWindow,content: string,htmlPath?:string) => {
+  //如果有设置htmlPath，就使用htmlPath，否则使用当前文件路径
+  const filePath = htmlPath || await getCurrentFile(browserWindow);
   if (!filePath) return;
   await writeFile(filePath,content,{encoding:'utf-8'});
-  setCurrentFile(filePath,content);
+  //如果是导出html，不保存路径
+  if(htmlPath) return;
+  setCurrentFile(browserWindow,filePath,content);
 }
 
 
@@ -146,13 +157,13 @@ ipcMain.on('show-save',(_,html:string)=>{
   showSaveDialog(browserWindow,html);
 })
 
-ipcMain.on('file-saving',(_,markdown:string)=>{
-  const browserWindow = BrowserWindow.fromWebContents(_.sender);
-  if (!browserWindow) {
-    return;
-  }
-  showSaveFileDialog(browserWindow,markdown);
-})
+// ipcMain.on('file-saving',(_,markdown:string)=>{
+//   const browserWindow = BrowserWindow.fromWebContents(_.sender);
+//   if (!browserWindow) {
+//     return;
+//   }
+//   showSaveFileDialog(browserWindow,markdown);
+// })
 
 ipcMain.on('save-file',(_,content:string)=>{
   const browserWindow = BrowserWindow.fromWebContents(_.sender);

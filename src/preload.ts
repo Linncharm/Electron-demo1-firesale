@@ -11,7 +11,7 @@ ipcRenderer.on('file-opened',(_,fileContent:string)=>{
 contextBridge.exposeInMainWorld('api',{
     showOpenDialog: ()=> ipcRenderer.send('show-open-dialog'),
     showSave: (html:string)=> ipcRenderer.send('show-save',html),
-    saveFile: (markdown:string)=> ipcRenderer.send('file-saving',markdown),
+    saveFile: (content:string)=> ipcRenderer.send('save-file',content),
 });
 // contextBridge.exposeInMainWorld('api',{
 //     showSaveDialog: (htmlFile:string,filePath:string)=> ipcRenderer.send('file-saved',htmlFile,filePath),
