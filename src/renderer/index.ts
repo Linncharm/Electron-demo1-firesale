@@ -1,12 +1,13 @@
-import { renderMarkdown } from './markdown';
+import {renderMarkdown} from './markdown';
 import Elements from './elements';
 
 Elements.MarkdownView.addEventListener('input', async () => {
   const markdown = Elements.MarkdownView.value;
   renderMarkdown(markdown);
+  Elements.SaveMarkdownButton.disabled = !await window.api.checkForUnsavedChanges(markdown);
 });
 
-Elements.OpenFileButton.addEventListener('click', () => {
+Elements.OpenFileButton.addEventListener('click', async () => {
   window.api.showOpenDialog();
 })
 
@@ -21,4 +22,10 @@ Elements.SaveMarkdownButton.addEventListener('click', () => {
     window.api.saveFile(markdown);
 })
 
-Elements.SaveMarkdownButton.disabled = false;
+Elements.ShowFileButton.addEventListener('click',()=>{
+    window.api.showInFolder();
+})
+
+Elements.OpenInDefaultApplicationButton.addEventListener('click',()=>{
+    window.api.openInDefault();
+})

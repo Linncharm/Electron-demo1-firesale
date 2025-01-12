@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain , shell } from 'electron';
 import { join , basename } from 'path';
 import { readFile , writeFile } from "node:fs/promises";
 
@@ -27,6 +27,10 @@ const setCurrentFile = (browserWindow: BrowserWindow,filePath: string,content: s
   app.addRecentDocument(filePath);
   browserWindow.setTitle(`${basename(filePath)} - ${app.name}`);
 }
+
+const hasChanged = (content :string)=>{
+  return currentFile.content!==content;
+};
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -169,4 +173,20 @@ ipcMain.on('save-file',(_,content:string)=>{
   const browserWindow = BrowserWindow.fromWebContents(_.sender);
   if (!browserWindow) return;
     saveFile(browserWindow,content);
+})
+
+ipcMain.handle('has-changed',async (_event,content:string)=>{
+  return hasChanged(content);
+})
+
+ipcMain.on('show-in-folder',async ()=>{
+  if(currentFile.filePath){
+    await shell.showItemInFolder(currentFile.filePath)
+  }
+})
+
+ipcMain.on('open-in-default',async ()=>{
+  if (currentFile.filePath){
+    await shell.openPath(currentFile.filePath);
+  }
 })

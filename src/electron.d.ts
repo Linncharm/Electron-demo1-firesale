@@ -9,5 +9,8 @@ declare interface Window{
         showOpenDialog: ()=>void;
         showSave: (html:string)=>void;
         saveFile: (content:string)=>void;
+        checkForUnsavedChanges: (content: string)=>Promise<boolean>;
+        showInFolder: ()=>void;
+        openInDefault: ()=>void;
     }
 }
